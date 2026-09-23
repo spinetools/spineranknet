@@ -1,0 +1,13 @@
+# Source distribution contents.
+#
+# The wheel carries only the importable package; the sdist is meant to be a
+# complete source release, so it also carries the experiment configs, the
+# analysis scripts and the citation metadata.
+include LICENSE README.md CITATION.cff requirements.txt
+recursive-include config *.yaml
+recursive-include scripts *.py
+
+# Never ship build state, caches, or the AppleDouble side files that macOS
+# writes next to every file on an exFAT volume.
+global-exclude ._* .DS_Store *.py[cod] __pycache__/*
+prune docs

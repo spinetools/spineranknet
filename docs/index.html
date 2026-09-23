@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Be Indiscrete: The Benefits of Learning Continuous Spine Degeneration Severity Scores</title>
+  <meta name="description" content="SpineRankNet learns continuous severity scores for 11 lumbar spine degeneration grading tasks from MRI with a severity-aware pairwise ranking loss, and recovers the ordinal grades from the score. MICCAI 2026.">
+  <meta name="keywords" content="pairwise ranking, ordinal regression, spine degeneration, lumbar MRI, SpineRankNet, Genodisc, MICCAI 2026">
+  <link rel="canonical" href="https://spinetools.github.io/spineranknet/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://spinetools.github.io/spineranknet/">
+  <meta property="og:title" content="Be Indiscrete: The Benefits of Learning Continuous Spine Degeneration Severity Scores">
+  <meta property="og:description" content="SpineRankNet: continuous severity scores for multi-pathology lumbar spine MRI grading, learned by severity-aware pairwise ranking. MICCAI 2026.">
+  <meta property="og:image" content="https://spinetools.github.io/spineranknet/resources/fig2_ranking_examples.jpg">
+
+  <!-- Fonts, Bulma and icons (same stack as the Nerfies / SpineSegDiff project pages) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans&amp;family=Noto+Sans:wght@300;400;600&amp;display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" integrity="sha384-HmYpsz2Aa9Gh3JlkCoh8kUJ2mUKJKTnkyC2Lzt8aLzpPOpnDe8KpFE2xNiBpMDou" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1.9.6/css/academicons.min.css" integrity="sha384-IAnhEDrYZnLsYcVzowpizdxXTHFovW5/CkZObGfY2QuaCKaQpvLCjj45LGb4Q/yE" crossorigin="anonymous">
+
+  <style>
+    body {
+      font-family: 'Noto Sans', sans-serif;
+      font-weight: 300;
+      color: #111;
+      background: #fff;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    strong, b { font-weight: 600; }
+    a { color: #1367a7; }
+    a:hover { color: #208799; }
+
+    .publication-title { font-family: 'Google Sans', sans-serif; font-weight: 400; line-height: 1.2; }
+    .publication-authors { font-family: 'Google Sans', sans-serif; font-size: 1.2rem; }
+    .publication-authors a { color: #1367a7 !important; }
+    .publication-authors a:hover { text-decoration: underline; }
+    .author-block { display: inline-block; margin: 0 0.35rem; }
+    .affiliations { font-size: 0.95rem; color: #666; margin-top: 0.6rem; }
+    .affiliations .author-block { margin: 0.1rem 0.5rem; }
+    .publication-venue { font-family: 'Google Sans', sans-serif; font-size: 1.15rem; color: #555; margin: 0.4rem 0 0.9rem; }
+
+    .publication-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 1.2rem; }
+    .publication-links .button { font-family: 'Google Sans', sans-serif; }
+    .publication-links .button[disabled] { opacity: 0.45; }
+
+    .section-title {
+      font-family: 'Google Sans', sans-serif;
+      font-size: 2rem;
+      font-weight: 300;
+      text-align: center;
+      margin-bottom: 1.2rem !important;
+    }
+    .subsection-title { font-family: 'Google Sans', sans-serif; font-size: 1.3rem; font-weight: 400; margin: 1.4rem 0 0.5rem; }
+    .section { padding: 2.2rem 1rem; }
+    .hero-body { padding: 2.5rem 1rem 1.5rem; }
+
+    hr.fade {
+      border: 0;
+      height: 1px;
+      margin: 0 auto;
+      max-width: 960px;
+      background-image: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,0.6), rgba(0,0,0,0));
+    }
+
+    figure.paper-figure { margin: 0 auto; text-align: center; }
+    figure.paper-figure img {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      margin: 0 auto;
+      border: 1px solid #eee;
+      border-radius: 10px;
+    }
+    figure.paper-figure figcaption {
+      font-size: 0.9rem;
+      color: #555;
+      text-align: left;
+      margin-top: 0.7rem;
+      line-height: 1.5;
+    }
+    .content p, .content li { line-height: 1.65; }
+
+    .math-block { overflow-x: auto; overflow-y: hidden; padding: 0.35rem 0; }
+    math[display="block"] { font-size: 1.08rem; margin: 0.2rem 0; }
+    .eq-box {
+      background: #fafafa;
+      border: 1px solid #e6e6e6;
+      border-radius: 10px;
+      padding: 0.9rem 1.1rem;
+      margin: 1rem 0;
+    }
+    .eq-box p { margin-bottom: 0.4rem !important; font-size: 0.95rem; }
+
+    .results-table { font-size: 0.95rem; margin: 0 auto !important; }
+    .results-table th, .results-table td { white-space: nowrap; text-align: center !important; vertical-align: middle; }
+    .results-table th:first-child, .results-table td:first-child { text-align: left !important; }
+    .results-table thead th { font-weight: 600; }
+    .results-table tbody + tbody { border-top: 2px solid #999; }
+    .results-table tr.is-ours td { background: #e8f3f6; }
+    .results-table tr.is-ours td:first-child { box-shadow: inset 4px 0 0 #007a92; }
+    .table-note { font-size: 0.85rem; color: #666; margin-top: 0.4rem; }
+    .table-caption { font-size: 0.9rem; color: #555; margin-bottom: 0.6rem; }
+
+    .bibtex-wrap { position: relative; }
+    .bibtex-wrap pre {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 1rem 1.1rem;
+      padding-top: 2.6rem;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .copy-btn { position: absolute; top: 0.5rem; right: 0.5rem; }
+
+    .page-footer {
+      margin-top: 2rem;
+      padding: 2rem 1rem;
+      background-color: #f5f5f5;
+      border-top: 1px solid #e0e0e0;
+      text-align: center;
+      font-size: 0.875rem;
+      color: #555;
+    }
+    .page-footer .footer-icons { margin-bottom: 0.8rem; }
+    .page-footer .footer-icon-link { color: #363636; margin: 0 10px; font-size: 1.4rem; }
+    .page-footer .footer-icon-link:hover { color: #208799; }
+    .page-footer p { max-width: 720px; margin: 0.3rem auto; }
+
+    img { max-width: 100%; height: auto; }
+    @media screen and (max-width: 768px) {
+      .publication-title { font-size: 1.7rem !important; }
+      .section-title { font-size: 1.6rem; }
+      .publication-authors { font-size: 1.05rem; }
+      .section { padding: 1.6rem 1rem; }
+      .content { text-align: left !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================== HEADER ============================== -->
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-2 publication-title">Be Indiscrete: The Benefits of Learning Continuous Spine Degeneration Severity Scores</h1>
+          <div class="publication-venue">MICCAI 2026</div>
+
+          <div class="publication-authors">
+            <span class="author-block"><a href="https://mariamonzon.github.io/">Maria Monzon</a><sup>1,2</sup>,</span>
+            <span class="author-block"><a href="https://www.robots.ox.ac.uk/~az/">Andrew Zisserman</a><sup>3</sup>,</span>
+            <span class="author-block">Robin Y. Park<sup>3</sup>,</span>
+            <span class="author-block"><a href="https://bmds.ethz.ch/">Catherine R. Jutzeler</a><sup>1,2</sup>,</span>
+            <span class="author-block"><a href="https://www.robots.ox.ac.uk/~amirj/">Amir Jamaludin</a><sup>3</sup></span>
+          </div>
+
+          <div class="affiliations">
+            <span class="author-block"><sup>1</sup>Biomedical Data Science Lab, Dept. D-HEST, ETH Zurich, Zurich, Switzerland</span>
+            <span class="author-block"><sup>2</sup>Swiss Institute of Bioinformatics (SIB), Lausanne, Switzerland</span>
+            <span class="author-block"><sup>3</sup>Visual Geometry Group, Dept. of Engineering Science, University of Oxford, UK</span>
+          </div>
+
+          <div class="publication-links">
+            <span class="link-block">
+              <button class="button is-normal is-rounded is-dark" type="button" disabled title="The paper will be linked here once the proceedings are available">
+                <span class="icon"><i class="fas fa-file-pdf" aria-hidden="true"></i></span>
+                <span>Paper (coming soon)</span>
+              </button>
+            </span>
+            <span class="link-block">
+              <a href="https://github.com/spinetools/spineranknet" class="button is-normal is-rounded is-dark">
+                <span class="icon"><i class="fab fa-github" aria-hidden="true"></i></span>
+                <span>Code</span>
+              </a>
+            </span>
+            <span class="link-block">
+              <a href="#bibtex" class="button is-normal is-rounded is-dark">
+                <span class="icon"><i class="fas fa-quote-right" aria-hidden="true"></i></span>
+                <span>BibTeX</span>
+              </a>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== TEASER ============================== -->
+<section class="hero teaser">
+  <div class="container is-max-desktop" style="padding: 0 1rem;">
+    <figure class="paper-figure">
+      <img src="resources/fig2_ranking_examples.jpg" width="2400" height="1013"
+           alt="Grid of sagittal MRI crops of intervertebral discs in five rows (Pfirrmann, central canal stenosis, narrowing, lower endplate defect, spondylolisthesis). In each row six discs are ordered by the predicted severity score from 0 to 10, with the score shown top left and the ground-truth grade bottom left of each crop.">
+      <figcaption>
+        <strong>SpineRankNet orders discs by a continuous severity score.</strong>
+        Example visualization of severity ranking for the pathology scores. IVD volumes for Pfirrmann,
+        central canal stenosis (CCS), Narrowing, Lower Endplate defects (Low. End.) and Spondylolisthesis
+        (Spon.), ordered by predicted score <i>s</i>&nbsp;&isin;&nbsp;[0,&nbsp;10] (top) with ground-truth ordinal
+        grades (bottom). Note how the severity progressively increases with score. For example, for CCS,
+        &ldquo;None&rdquo; cases (0.0 vs. 1.4) differentiate normal from subtle central canal compression, while
+        &ldquo;Severe&rdquo; cases (8.3&nbsp;&rarr;&nbsp;10) capture progressive cord impingement. (Paper, Fig.&nbsp;2.)
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============================== ABSTRACT ============================== -->
+<section class="section" id="abstract">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title section-title">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Lumbar spine degeneration is a major contributor to chronic low back pain and is routinely assessed
+            on MRI using ordinal grading systems, e.g. normal, mild, moderate, severe. Consequently, most
+            approaches to train models to grade these MRIs formulate grading as a multi-class classification
+            problem, treating ordinal grades as categorical, ignoring differences in misclassification severity,
+            and imposing hard decision boundaries on a continuous disease process. This work explores modeling
+            spinal degeneration as a continuous severity ranking problem. We introduce SpineRankNet, a framework
+            that learns scalar severity scores from lumbar spinal MRI, and compare it against multi-class
+            classification and ordinal regression. Using multiple degeneration measures from the Genodisc
+            dataset, we show that a model trained using a ranking loss to produce a continuous score enables
+            fine-grained ordering of MRI scans. Furthermore, the ordinal grading classes can be recovered from
+            the score with comparable accuracy to those from a model trained directly for classification. The
+            score learned by ranking even improves discrimination between more distant classes. Source code is
+            available at <a href="https://github.com/spinetools/spineranknet">https://github.com/spinetools/spineranknet</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="fade">
+
+<!-- ============================== METHOD ============================== -->
+<section class="section" id="method">
+  <div class="container is-max-desktop">
+    <h2 class="title section-title">Method</h2>
+
+    <figure class="paper-figure">
+      <img src="resources/fig1_architecture.png" width="2400" height="756"
+           alt="Architecture diagram in two panels. Training (top): an IVD volume passes through a ResNet-18 encoder to an embedding z, a classification head producing logits, and a rank head producing a score; the per-task score difference between two discs is compared with the pairwise label r_ij (+1, 0 for similar, -1). Inference (bottom): the shared encoder, classification head and rank head produce a score that is thresholded (tau to K) into a severity grade y_t and also returned as the continuous severity score s_t.">
+      <figcaption>
+        <strong>Multi-task architecture for joint classification and ranking.</strong>
+        A shared 3D ResNet-18 encoder produces an embedding <b>z</b>, followed by task-specific classification
+        and ranking heads. Each ranking head outputs a continuous severity score
+        <i>s</i><sup>(<i>t</i>)</sup>&nbsp;&isin;&nbsp;[0,&nbsp;10]; for clarity, the figure shows one representative
+        task head, though there are heads for each of the 11 spinal grading tasks. Pairwise supervision is
+        derived from ground-truth grade orderings and optimized with a severity-aware hinge loss. (Paper, Fig.&nbsp;1.)
+      </figcaption>
+    </figure>
+
+    <div class="columns is-centered" style="margin-top: 1.2rem;">
+      <div class="column is-four-fifths">
+        <div class="content has-text-justified">
+          <p>
+            SpineRankNet is trained in two phases. First, a shared 3D ResNet-18 encoder (asymmetric strides that
+            preserve the slice dimension) and one linear classification head per grading task are trained from
+            scratch with inverse-frequency-weighted cross-entropy. Second, a lightweight two-layer MLP ranking head
+            per task is trained on top of the classification heads (Fig.&nbsp;1), while the encoder is fine-tuned at a
+            lower learning rate, using pairs of discs drawn from each mini-batch; the classification heads are also
+            updated, by the ranking loss only. Pairs with different grades are
+            penalised by a severity-weighted squared hinge loss whose adaptive margin
+            <i>m</i>&nbsp;=&nbsp;<i>m</i><sub>base</sub>&nbsp;+&nbsp;<i>m</i><sub>scale</sub>&nbsp;&middot;&nbsp;<i>w</i>/<i>S</i>
+            grows with the normalised grade gap <i>w</i>, and pairs with the same grade by a similarity term (their
+            squared score difference) that keeps each grade compact on the severity axis. Each score is
+            soft-clamped to [0,&nbsp;<i>S</i>&nbsp;=&nbsp;10], and the ordinal grades are recovered from it with
+            per-task thresholds found by coordinate-descent grid search on the validation set.
+          </p>
+        </div>
+
+        <div class="eq-box">
+          <p><strong>Severity-weighted hinge loss</strong> over pairs (<i>x<sub>i</sub></i>, <i>x<sub>j</sub></i>) with different grades for task <i>t</i>,
+            where <i>r</i><sub><i>ij</i></sub><sup><i>t</i></sup>&nbsp;=&nbsp;sign(<i>y<sub>i</sub></i><sup><i>t</i></sup>&nbsp;&minus;&nbsp;<i>y<sub>j</sub></i><sup><i>t</i></sup>)
+            and &Delta;<i>s</i><sub><i>ij</i></sub><sup><i>t</i></sup>&nbsp;=&nbsp;<i>s<sub>i</sub></i><sup><i>t</i></sup>&nbsp;&minus;&nbsp;<i>s<sub>j</sub></i><sup><i>t</i></sup>:</p>
+          <div class="math-block">
+            <math display="block">
+              <msubsup><mi>&#x2112;</mi><mtext>hinge</mtext><mi>t</mi></msubsup>
+              <mo>=</mo>
+              <mfrac><mn>1</mn><mrow><mo>|</mo><msup><mi>&#x1D4AB;</mi><mi>t</mi></msup><mo>|</mo></mrow></mfrac>
+              <munder><mo>&#x2211;</mo><mrow><mo stretchy="false">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>,</mo><msub><mi>x</mi><mi>j</mi></msub><mo stretchy="false">)</mo><mo>&#x2208;</mo><msup><mi>&#x1D4AB;</mi><mi>t</mi></msup></mrow></munder>
+              <msubsup><mi>w</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>t</mi></msubsup>
+              <msup>
+                <mrow><mo>[</mo><mi>max</mi><mo stretchy="false">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>m</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>t</mi></msubsup><mo>&#x2212;</mo><msubsup><mi>r</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>t</mi></msubsup><mi mathvariant="normal">&#x0394;</mi><msubsup><mi>s</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>t</mi></msubsup><mo stretchy="false">)</mo><mo>]</mo></mrow>
+                <mn>2</mn>
+              </msup>
+            </math>
+          </div>
+          <p><strong>Difference-specific weight and severity-aware margin</strong> (<i>K<sub>t</sub></i> grades for task <i>t</i>,
+            <i>S</i>&nbsp;=&nbsp;10, <i>m</i><sub>base</sub>&nbsp;=&nbsp;0.5, <i>m</i><sub>scale</sub>&nbsp;=&nbsp;1.5):</p>
+          <div class="math-block">
+            <math display="block">
+              <msubsup><mi>w</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>t</mi></msubsup>
+              <mo>=</mo>
+              <mrow><mo>|</mo><msubsup><mi>y</mi><mi>i</mi><mi>t</mi></msubsup><mo>&#x2212;</mo><msubsup><mi>y</mi><mi>j</mi><mi>t</mi></msubsup><mo>|</mo></mrow>
+              <mo>&#x22C5;</mo>
+              <mfrac><mi>S</mi><mrow><msub><mi>K</mi><mi>t</mi></msub><mo>&#x2212;</mo><mn>1</mn></mrow></mfrac>
+            </math>
+            <math display="block">
+              <msubsup><mi>m</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>t</mi></msubsup>
+              <mo>=</mo>
+              <msub><mi>m</mi><mtext>base</mtext></msub>
+              <mo>+</mo>
+              <msub><mi>m</mi><mtext>scale</mtext></msub>
+              <mo>&#x22C5;</mo>
+              <mfrac><msubsup><mi>w</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>t</mi></msubsup><mi>S</mi></mfrac>
+            </math>
+          </div>
+          <p><strong>Similarity term</strong> over same-grade pairs, and <strong>total loss</strong> over the <i>T</i> tasks
+            (<i>&lambda;</i><sub>dis</sub>&nbsp;=&nbsp;1, <i>&lambda;</i><sub>sim</sub>&nbsp;=&nbsp;0.25):</p>
+          <div class="math-block">
+            <math display="block">
+              <msubsup><mi>&#x2112;</mi><mtext>sim</mtext><mi>t</mi></msubsup>
+              <mo>=</mo>
+              <mfrac><mn>1</mn><mrow><mo>|</mo><msup><mi>&#x1D4AE;</mi><mi>t</mi></msup><mo>|</mo></mrow></mfrac>
+              <munder><mo>&#x2211;</mo><mrow><mo stretchy="false">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>,</mo><msub><mi>x</mi><mi>j</mi></msub><mo stretchy="false">)</mo><mo>&#x2208;</mo><msup><mi>&#x1D4AE;</mi><mi>t</mi></msup></mrow></munder>
+              <msup><mrow><mo stretchy="false">(</mo><mi mathvariant="normal">&#x0394;</mi><msubsup><mi>s</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>t</mi></msubsup><mo stretchy="false">)</mo></mrow><mn>2</mn></msup>
+            </math>
+            <math display="block">
+              <mi>&#x2112;</mi>
+              <mo>=</mo>
+              <munderover><mo>&#x2211;</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover>
+              <mrow><mo>(</mo><msub><mi>&#x3BB;</mi><mtext>dis</mtext></msub><msubsup><mi>&#x2112;</mi><mtext>hinge</mtext><mi>t</mi></msubsup><mo>+</mo><msub><mi>&#x3BB;</mi><mtext>sim</mtext></msub><msubsup><mi>&#x2112;</mi><mtext>sim</mtext><mi>t</mi></msubsup><mo>)</mo></mrow>
+            </math>
+          </div>
+          <p><strong>Bounded score</strong>: the ranking head &phi;<sub><i>t</i></sub> gives a latent score <i>h<sub>t</sub></i>, which a softplus
+            soft-clamp (sp(<i>z</i>)&nbsp;=&nbsp;ln(1&nbsp;+&nbsp;<i>e<sup>z</sup></i>), <i>&beta;</i>&nbsp;=&nbsp;5) maps to [0,&nbsp;<i>S</i>]:</p>
+          <div class="math-block">
+            <math display="block">
+              <msub><mi>s</mi><mi>t</mi></msub>
+              <mo>=</mo>
+              <mi>S</mi>
+              <mo>&#x22C5;</mo>
+              <mfrac>
+                <mrow><mi>sp</mi><mo stretchy="false">(</mo><mi>&#x3B2;</mi><msub><mi>h</mi><mi>t</mi></msub><mo stretchy="false">)</mo></mrow>
+                <mrow><mi>sp</mi><mo stretchy="false">(</mo><mi>&#x3B2;</mi><msub><mi>h</mi><mi>t</mi></msub><mo stretchy="false">)</mo><mo>+</mo><mi>sp</mi><mo stretchy="false">(</mo><mi>&#x3B2;</mi><mo stretchy="false">(</mo><mi>S</mi><mo>&#x2212;</mo><msub><mi>h</mi><mi>t</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow>
+              </mfrac>
+            </math>
+          </div>
+          <p style="margin-bottom: 0 !important;">Training pairs come from mini-batches of <i>B</i>&nbsp;=&nbsp;32 discs: per task, 70% of the
+            candidate pairs are selected by largest violation (hard-negative mining) and 30% are sampled uniformly.
+            With <i>B</i>&nbsp;=&nbsp;32 and at most 500 pairs per task, all 496 in-batch pairs are used; the 70/30
+            selection only applies when there are more than 500 candidate pairs.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="fade">
+
+<!-- ============================== DATASET ============================== -->
+<section class="section" id="dataset">
+  <div class="container is-max-desktop">
+    <h2 class="title section-title">Dataset</h2>
+    <div class="columns is-centered">
+      <div class="column is-four-fifths">
+        <div class="content has-text-justified">
+          <p>
+            Experiments use the multi-centre Genodisc dataset: T1- and T2-weighted sagittal lumbar MRIs of about
+            2,000 subjects from five European centres with heterogeneous acquisition parameters (0.2&ndash;3.0&nbsp;T,
+            0.25&ndash;0.9&nbsp;mm in-plane, 2.6&ndash;6.0&nbsp;mm slice spacing). Each subject has up to six lumbar
+            intervertebral disc (IVD) levels (T12-L1 to L5-S1), and expert radiological annotations cover
+            <strong>11 grading tasks</strong> per level: Pfirrmann grade, disc narrowing, central canal stenosis,
+            spondylolisthesis, upper and lower endplate defects, left and right foraminal stenosis, herniation, and
+            anterior and posterior bulging. IVD volumes of 128&nbsp;&times;&nbsp;256&nbsp;&times;&nbsp;12 voxels are
+            extracted with SpineNetV2 vertebra localisation, disc-centred rotation and resampling, and the data is
+            split at patient level into training, validation and test sets (80/10/10%), stratified by acquisition
+            centre and grade distribution. The labels are highly imbalanced: for 10 of the 11 tasks, 60&ndash;96% of
+            discs are graded normal (Pfirrmann, whose lowest grade I covers 32% of discs, is the exception), and the
+            most severe grades are rare (e.g. severe stenosis: 2%).
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <figure class="paper-figure">
+      <img src="resources/genodisc_severity_grid.jpg" width="2400" height="516" loading="lazy"
+           alt="Grid of sagittal T2-weighted MRI crops of intervertebral discs: 11 columns, one per grading task in alphabetical order with its disc level printed below, and 4 rows labelled normal, mild, moderate and severe. Pfirrmann crops carry a grade badge, as does the repeated moderate spondylolisthesis crop.">
+      <figcaption>
+        <strong>One example disc per task and severity level.</strong> T2-weighted sagittal slices of extracted IVD
+        volumes for the 11 grading tasks (columns, in alphabetical order; the disc level is given below each column)
+        and four severity rows. All examples of a task come from the same disc level. For Pfirrmann grading, grades
+        I, III, IV and V are shown, as labelled on each crop. Spondylolisthesis has no mild grade, so its moderate
+        example appears in both the mild and the moderate row.
+      </figcaption>
+    </figure>
+
+    <figure class="paper-figure" style="margin-top: 2rem; max-width: 820px;">
+      <img src="resources/genodisc_grade_distribution.png" width="1966" height="1075" loading="lazy"
+           alt="Stacked horizontal bar chart of the grade distribution for each of the 11 grading tasks. Normal grades dominate most tasks, from 60 percent for disc narrowing to 96 percent for spondylolisthesis; Pfirrmann grades I to V are 32, 15, 23, 20 and 10 percent. About 12,000 discs per task.">
+      <figcaption>
+        <strong>Grade distribution per task.</strong> Share of IVDs with a T2-weighted series in each grade (training,
+        validation and test sets pooled; <i>N</i> per task on the right). Spondylolisthesis has no mild grade.
+        The two dataset figures in this section are not part of the paper.
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<hr class="fade">
+
+<!-- ============================== RESULTS ============================== -->
+<section class="section" id="results">
+  <div class="container is-max-desktop">
+    <h2 class="title section-title">Results</h2>
+    <div class="columns is-centered">
+      <div class="column is-four-fifths">
+        <p class="table-caption">
+          <strong>Table 1.</strong> Comparison on the Genodisc test set (ResNet-18), aggregated over 11 grading tasks.
+          Mean &plusmn; std over the individual task performances (single run). Rules separate classification,
+          ordinal regression and pairwise ranking; bold as in the paper.
+        </p>
+        <div class="table-container">
+          <table class="table is-narrow is-hoverable results-table">
+            <thead>
+              <tr>
+                <th scope="col">Loss</th>
+                <th scope="col">BA (%) &uarr;</th>
+                <th scope="col">ROC-AUC &uarr;</th>
+                <th scope="col">QWK &uarr;</th>
+                <th scope="col">MAE &darr;</th>
+                <th scope="col">MCC &uarr;</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>CE</td>
+                <td><strong>64.1 &plusmn; 7.9</strong></td>
+                <td><strong>0.94 &plusmn; 0.02</strong></td>
+                <td>0.69 &plusmn; 0.12</td>
+                <td>0.18 &plusmn; 0.09</td>
+                <td>0.54 &plusmn; 0.08</td>
+              </tr>
+            </tbody>
+            <tbody>
+              <tr>
+                <td>CORN</td>
+                <td>56.9 &plusmn; 9.8</td>
+                <td>&mdash;*</td>
+                <td>0.72 &plusmn; 0.12</td>
+                <td>0.15 &plusmn; 0.10</td>
+                <td>0.55 &plusmn; 0.10</td>
+              </tr>
+              <tr>
+                <td>MAE<sub>&#x2113;</sub></td>
+                <td>58.8 &plusmn; 15.7</td>
+                <td>0.84 &plusmn; 0.13</td>
+                <td>0.54 &plusmn; 0.24</td>
+                <td>0.39 &plusmn; 0.30</td>
+                <td>0.38 &plusmn; 0.20</td>
+              </tr>
+            </tbody>
+            <tbody>
+              <tr>
+                <td>RankNet</td>
+                <td>58.7 &plusmn; 8.3</td>
+                <td>0.90 &plusmn; 0.03</td>
+                <td>0.73 &plusmn; 0.11</td>
+                <td>0.16 &plusmn; 0.09</td>
+                <td>0.57 &plusmn; 0.07</td>
+              </tr>
+              <tr>
+                <td>DeepRankSVM</td>
+                <td>61.0 &plusmn; 8.4</td>
+                <td>0.88 &plusmn; 0.05</td>
+                <td>0.74 &plusmn; 0.11</td>
+                <td>0.16 &plusmn; 0.09</td>
+                <td>0.57 &plusmn; 0.07</td>
+              </tr>
+              <tr class="is-ours">
+                <td><strong>SpineRankNet</strong></td>
+                <td>63.3 &plusmn; 9.5</td>
+                <td><strong>0.94 &plusmn; 0.04</strong></td>
+                <td><strong>0.76 &plusmn; 0.10</strong></td>
+                <td><strong>0.14 &plusmn; 0.09</strong></td>
+                <td><strong>0.59 &plusmn; 0.08</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">*ROC for CORN not available. BA: balanced accuracy; QWK: quadratic weighted Cohen&rsquo;s
+          kappa; MAE: mean absolute error; MCC: Matthews correlation coefficient. All methods share the same 3D
+          ResNet-18 encoder and evaluation protocol with 54-view test-time augmentation.</p>
+
+        <div class="content has-text-justified" style="margin-top: 1.2rem;">
+          <p>
+            Cross-entropy classification and CORN ordinal regression trade accuracy against ordinal concordance,
+            whereas the pairwise ranking methods give the best ordinal metrics. SpineRankNet reaches the highest
+            agreement (QWK 0.76), the lowest MAE (0.14) and the highest MCC (0.59) while keeping classification-level
+            discrimination (ROC-AUC 0.94) and a balanced accuracy close to CE (63.3% vs. 64.1%), i.e. it reduces
+            large grade errors without giving up accuracy, and it outperforms the prior ranking models RankNet and
+            DeepRankSVM.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="fade">
+
+<!-- ============================== BIBTEX ============================== -->
+<section class="section" id="bibtex">
+  <div class="container is-max-desktop">
+    <h2 class="title section-title">BibTeX</h2>
+    <div class="columns is-centered">
+      <div class="column is-four-fifths">
+        <div class="bibtex-wrap">
+          <button class="button is-small is-rounded is-dark copy-btn" type="button" id="copy-bibtex" aria-label="Copy BibTeX to clipboard">
+            <span class="icon is-small"><i class="far fa-copy" aria-hidden="true"></i></span>
+            <span class="copy-label">Copy</span>
+          </button>
+<pre id="bibtex-text"><code>@inproceedings{monzon2026indiscrete,
+  title     = {Be Indiscrete: The Benefits of Learning Continuous Spine Degeneration Severity Scores},
+  author    = {Monzon, Maria and Zisserman, Andrew and Park, Robin Y. and Jutzeler, Catherine R. and Jamaludin, Amir},
+  booktitle = {Medical Image Computing and Computer Assisted Intervention -- MICCAI 2026},
+  year      = {2026},
+  publisher = {Springer Nature Switzerland}
+}</code></pre>
+        </div>
+        <p class="has-text-centered" style="font-size: 0.9rem;"><a href="resources/bibtex.txt">Download as .bib text file</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="fade">
+
+<!-- ============================== ACKNOWLEDGEMENTS ============================== -->
+<section class="section" id="acknowledgements">
+  <div class="container is-max-desktop">
+    <h2 class="title section-title">Acknowledgements</h2>
+    <div class="columns is-centered">
+      <div class="column is-four-fifths">
+        <div class="content has-text-justified">
+          <p>
+            This project was supported by a grant (#380, Jutzeler, Manjaly) from the Strategic Focus Area
+            &ldquo;Personalized Health and Related Technologies (PHRT)&rdquo; of the ETH Domain (Swiss Federal Institute
+            of Technology), by the Swiss National Science Foundation (Ambizione Grant #PZ00P3_186101, CRJ). This
+            project was also funded by the EPSRC programme grant Visual AI (EP/T025872/1) and EPSRC CDT in Health Data
+            Science (EP/S02428X/1). We thank our clinical collaborators Prof. J. Fairbank, Dr. J. Urban, Dr. S. Ather,
+            and Prof. I. McCall. AI-assisted tools (GitHub Copilot, Perplexity, Writefull) were used for coding
+            and grammar refinement; the authors reviewed all output and take full responsibility for the content.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== FOOTER ============================== -->
+<footer class="page-footer">
+  <div class="footer-icons">
+    <a class="footer-icon-link" href="https://github.com/spinetools/spineranknet" title="Code on GitHub" aria-label="Code on GitHub">
+      <i class="fab fa-github" aria-hidden="true"></i>
+    </a>
+    <a class="footer-icon-link" href="#bibtex" title="BibTeX" aria-label="BibTeX">
+      <i class="fas fa-quote-right" aria-hidden="true"></i>
+    </a>
+  </div>
+  <p>
+    This website is licensed under a
+    <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons
+    Attribution-ShareAlike 4.0 International License</a>.
+    The project webpage template was originally made by
+    <a href="https://web.mit.edu/phillipi/">Phillip Isola</a> and
+    <a href="https://richzhang.github.io/">Richard Zhang</a>, adapted via the
+    <a href="https://nerfies.github.io/">Nerfies</a> project page and the
+    <a href="https://bmds-eth.github.io/SpineSegDiff/">SpineSegDiff</a> page.
+    You are free to borrow the <a href="https://github.com/spinetools/spineranknet/tree/main/docs">source code</a>
+    of this website.
+  </p>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById('copy-bibtex');
+    var pre = document.getElementById('bibtex-text');
+    if (!btn || !pre) { return; }
+    var label = btn.querySelector('.copy-label');
+    function show(text) {
+      label.textContent = text;
+      window.setTimeout(function () { label.textContent = 'Copy'; }, 1800);
+    }
+    function fallbackCopy() {
+      var range = document.createRange();
+      range.selectNodeContents(pre);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      show(ok ? 'Copied' : 'Press Ctrl+C');
+    }
+    btn.addEventListener('click', function () {
+      var text = pre.textContent;
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function () { show('Copied'); }, fallbackCopy);
+      } else {
+        fallbackCopy();
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>

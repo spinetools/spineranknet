@@ -1,0 +1,115 @@
+# SpineRankNet — general-purpose hybrid (classification + ranking) configuration
+#
+# Not used for the paper tables (those use config/ranking_logit_heads.yaml);
+# provided as a starting point for joint clf + ranking training.
+#
+# Used by: python -m spineranknet.baseline.train_ranking_mse --config config/ranking_baseline.yaml
+#
+# Supports four modes:
+#   --mode train (default): hybrid classification + ranking end-to-end
+#   --mode clf:             classification loss only
+#   --mode rank:            ranking loss only
+#   --mode eval:            evaluate existing checkpoint
+#
+# Override ranking loss via CLI: --ranking_loss MSE|MAE|RelativeAttributes|DeepRankSVM|DeepRelativeAttributes|JustNoticeableDifferences|RankNet|TripletOrdinal|SpineRank
+# Override clf loss via CLI:     --clf_loss ce|emd|corn|coral|soft_ce|clm|mae
+# Apply ablation preset:        --ablation clf_coral
+
+# ── Data paths (fast numpy pipeline — GenodiscOrdinalDataset) ──
+# Relative to the working directory. Relocate with --data_root or the
+# GENODISC_ROOT environment variable, or override with
+# --genodict_path / --ivd_path. IVD_PATH must end with "/".
+# Path values may also use environment variables and ~,
+# e.g. IVD_PATH: ${GENODISC_ROOT}/IVDs-numpy/
+GENODICT_PATH: data/GENODISCv2/geno_ivd_v1.pkl
+IVD_PATH: data/GENODISCv2/IVDs-numpy/
+
+# ── Annotations (not read by the trainer; kept for reference) ──
+JSON_PATH: data/GENODISCv2/genodisc_grading.json
+
+# ── Geometry ──
+N_SLICES: 12
+HEIGHT: 128
+WIDTH: 256
+
+# ── Dataset ──
+AUGMENTATION_MODE: standard
+USE_CACHE: true
+CACHE_DIR: .cache/genodisc
+CACHE_RATE: 1.0
+CACHE_NUM_WORKERS: 0
+FILTER_SEQUENCES: null
+
+# ── Backbone ──
+MODEL_TYPE: resnet18
+CHECKPOINT: ""
+HEAD_TYPE: linear
+HEAD_HIDDEN_DIM: 256
+
+# ── Ranking heads ──
+RANKING_HEAD_TYPE: mlp
+RANK_HIDDEN_DIM: 128
+RANK_DROPOUT: 0.3
+BOUNDED: true
+RANK_FROM_LOGITS: true
+
+# ── Classification ──
+CLF_LOSS_WEIGHT: 1.0
+USE_CLASS_WEIGHTS: true
+TASK_LOSS_OVERRIDE: null   # Use {_all_: "emd"} for global override
+
+# ── Hybrid loss weights ──
+RANKING_LOSS_WEIGHT: 1.0
+USE_TRIPLET: false
+TRIPLET_LOSS_WEIGHT: 0.0
+
+# ── Training ──
+BATCH_SIZE: 32
+NUM_WORKERS: 0   # 0 avoids torch_shm_manager errors on some shared systems
+EPOCHS: 200
+LR: 1.0e-3
+ENCODER_LR: 1.0e-4
+WEIGHT_DECAY: 1.0e-5
+
+# ── Ranking loss ──
+# Margin=2.0: safe for all tasks (Pfirrmann K=5 → max feasible 2.5,
+# all others K≤4 → max feasible 3.3).  HARD_MARGIN should match
+# RANKING_MARGIN so hard-negative mining detects margin violations.
+RANKING_LOSS: DeepRankSVM
+RANKING_MARGIN: 2.0
+RANKING_C1: 1.0
+RANKING_C2: 0.25
+MAX_PAIRS_PER_BATCH: 500
+HARD_NEGATIVE_RATIO: 0.7
+HARD_MARGIN: 2.0
+SKIP_EQUAL_PAIRS: true    # only pairs with label difference (no same-grade pairs)
+
+# ── Thresholding ──
+THRESHOLD_METRIC: balanced_accuracy
+THRESHOLD_GRID_STEPS: 200
+
+# ── Tasks (ordinal = all full multi-class grading scales) ──
+TASKS:
+  - Pfirrmann
+  - Narrowing
+  - CentralCanalStenosis
+  - Spondylolisthesis
+  - UpperEndplateDefect
+  - LowerEndplateDefect
+  - UpperModic
+  - LowerModic
+  - ForaminalStenosisLeft
+  - ForaminalStenosisRight
+  - Herniation
+  - AnteriorBulging
+  - PosteriorBulging
+  - IVDlevel
+
+USE_RAW_LABELS: true
+
+# ── Output ──
+SAVE_DIR: results/ranking_baseline/weights
+EVAL_DIR: results/ranking_baseline/eval
+LOGDIR: results/ranking_baseline/logs
+
+SEED: 42

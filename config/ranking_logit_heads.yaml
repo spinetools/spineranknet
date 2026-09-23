@@ -1,0 +1,110 @@
+# SpineRankNet — main configuration (logit-based ranking heads)
+#
+# Ranking heads operate on the per-task classification logits
+# (RANK_FROM_LOGITS: true, K-dim logits -> 1-dim severity score);
+# RANKING_HEAD_TYPE selects the head architecture.
+#
+# Used for both phases of the paper; `python scripts/run_all_experiments.py`
+# prints the exact commands:
+#   Phase 1 (classification):  --mode clf --clf_loss {ce,corn,mae} --epochs 300
+#   Phase 2 (ranking):         --checkpoint <phase1 best.pt> --encoder_only
+#                              --rank_from_logits --ranking_loss SpineRank
+#                              --spinerank_c2 0.25 --epochs 200 ...
+# CLI flags override the values below.
+
+# ── Data paths (fast numpy pipeline) ──
+# Relative to the working directory. Relocate with --data_root or the
+# GENODISC_ROOT environment variable, or override with
+# --genodict_path / --ivd_path. IVD_PATH must end with "/".
+# Path values may also use environment variables and ~,
+# e.g. IVD_PATH: ${GENODISC_ROOT}/IVDs-numpy/
+GENODICT_PATH: data/GENODISCv2/geno_ivd_v1.pkl
+IVD_PATH: data/GENODISCv2/IVDs-numpy/
+
+# ── Annotations (not read by the trainer; kept for reference) ──
+JSON_PATH: data/GENODISCv2/genodisc_grading.json
+
+# ── Geometry ──
+N_SLICES: 12
+HEIGHT: 128
+WIDTH: 256
+
+# ── Dataset ──
+AUGMENTATION_MODE: standard
+USE_CACHE: true
+CACHE_DIR: .cache/genodisc
+CACHE_RATE: 1.0
+CACHE_NUM_WORKERS: 4
+FILTER_SEQUENCES: null
+
+# ── Backbone ──
+MODEL_TYPE: resnet18
+CHECKPOINT: ""
+HEAD_TYPE: linear
+HEAD_HIDDEN_DIM: 256
+
+# ── Ranking heads ──
+RANKING_HEAD_TYPE: mlp
+RANK_HIDDEN_DIM: 64
+RANK_DROPOUT: 0.3
+BOUNDED: true
+BOUNDING_MODE: softplus
+RANK_FROM_LOGITS: true
+
+# ── Classification ──
+CLF_LOSS_WEIGHT: 1.0
+USE_CLASS_WEIGHTS: true
+TASK_LOSS_OVERRIDE: null
+
+# ── Hybrid loss weights ──
+RANKING_LOSS_WEIGHT: 1.0
+USE_TRIPLET: false
+TRIPLET_LOSS_WEIGHT: 0.5
+
+# ── Training ──
+BATCH_SIZE: 32
+NUM_WORKERS: 4
+EPOCHS: 150
+LR: 1.0e-3
+ENCODER_LR: 1.0e-4
+WEIGHT_DECAY: 1.0e-5
+
+# ── Ranking loss ──
+RANKING_LOSS: DeepRankSVM
+RANKING_MARGIN: 2.0
+RANKING_C1: 1.0
+RANKING_C2: 0.15
+MAX_PAIRS_PER_BATCH: 500
+HARD_NEGATIVE_RATIO: 0.7
+HARD_MARGIN: 2.0
+SKIP_EQUAL_PAIRS: false
+
+# ── Thresholding ──
+THRESHOLD_METRIC: composite
+THRESHOLD_GRID_STEPS: 200
+
+# ── Tasks ──
+TASKS:
+  - Pfirrmann
+  - Narrowing
+  - CentralCanalStenosis
+  - Spondylolisthesis
+  - UpperEndplateDefect
+  - LowerEndplateDefect
+  - UpperModic
+  - LowerModic
+  - ForaminalStenosisLeft
+  - ForaminalStenosisRight
+  - Herniation
+  - AnteriorBulging
+  - PosteriorBulging
+  - IVDlevel
+
+USE_RAW_LABELS: true
+
+# ── Output ──
+SAVE_DIR: results/ranking_logit_heads/weights
+EVAL_DIR: results/ranking_logit_heads/eval
+LOGDIR: results/ranking_logit_heads/logs
+
+SEED: 42

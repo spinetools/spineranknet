@@ -1,0 +1,158 @@
+
+"""Faster KAN layer implementation with reflectional switch functions and spline linear transformations.
+
+Based on "KAN: Kolmogorov-Arnold Networks" (Liu et al., https://arxiv.org/abs/2404.19756)
+and the FasterKAN formulation of https://github.com/AthanasiosDelis/faster-kan
+(Apache License 2.0).
+
+Taken from https://github.com/chenziwenhaoshuai/Vision-KAN and modified by the
+SpineRankNet authors. The original code is distributed under the MIT License:
+
+    Copyright (c) 2024 chenziwenhaoshuai, tommarvoloriddle, chouheiwa
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+"""
+
+
+from __future__ import annotations
+
+from typing import Callable, List
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch import Tensor
+
+
+__all__ = [
+    "SplineLinear",
+    "ReflectionalSwitchFunction",
+    "FasterKANLayer",
+    "FasterKAN",
+]
+
+
+class SplineLinear(nn.Linear):
+    def __init__(self, in_features: int, out_features: int, init_scale: float = 0.1, **kw) -> None:
+        self.init_scale = init_scale
+        super().__init__(in_features, out_features, bias=False, **kw)
+
+    def reset_parameters(self) -> None:
+        nn.init.xavier_uniform_(self.weight)
+
+
+class ReflectionalSwitchFunction(nn.Module):
+    def __init__(
+            self,
+            grid_min: float = -2.,
+            grid_max: float = 2.,
+            num_grids: int = 8,
+            exponent: int = 2,
+            denominator: float = 0.33,  # larger denominators lead to smoother basis
+    ) -> None:
+        super().__init__()
+        grid = torch.linspace(grid_min, grid_max, num_grids)
+        self.grid = torch.nn.Parameter(grid, requires_grad=False)
+        self.denominator = denominator  # or (grid_max - grid_min) / (num_grids - 1)
+        # self.exponent = exponent
+        self.inv_denominator = 1 / self.denominator  # Cache the inverse of the denominator
+
+    def forward(self, x: Tensor) -> Tensor:
+        diff = (x[..., None] - self.grid)
+        diff_mul = diff.mul(self.inv_denominator)
+        diff_tanh = torch.tanh(diff_mul)
+        diff_pow = -diff_tanh.mul(diff_tanh)
+        diff_pow += 1
+        # diff_pow *= 0.667
+        return diff_pow  # Replace pow with multiplication for squaring
+
+
+class FasterKANLayer(nn.Module):
+    def __init__(
+            self,
+            input_dim: int,
+            output_dim: int,
+            grid_min: float = -2.,
+            grid_max: float = 2.,
+            num_grids: int = 8,
+            exponent: int = 2,
+            denominator: float = 0.33,
+            use_base_update: bool = True,
+            base_activation: Callable[[Tensor], Tensor] = F.silu,
+            spline_weight_init_scale: float = 0.1,
+    ) -> None:
+        super().__init__()
+        self.layernorm = nn.LayerNorm(input_dim)
+        self.rbf = ReflectionalSwitchFunction(grid_min, grid_max, num_grids, exponent, denominator)
+        self.spline_linear = SplineLinear(input_dim * num_grids, output_dim, spline_weight_init_scale)
+        # self.use_base_update = use_base_update
+        # if use_base_update:
+        #    self.base_activation = base_activation
+        #    self.base_linear = nn.Linear(input_dim, output_dim)
+
+    def forward(self, x: Tensor, time_benchmark: bool = False) -> Tensor:
+        if x is None:
+            raise ValueError(f"FasterKAN received None input. Layer: {self.__class__.__name__}")
+
+
+        if x.dim() > 2:
+            batch_size = x.shape[0]
+            x = x.view(batch_size, -1)  # Flatten to [B, C*H*W]
+
+        if not time_benchmark:
+            spline_basis = self.rbf(self.layernorm(x)).view(x.shape[0], -1)
+            # print("spline_basis:", spline_basis.shape)
+        else:
+            spline_basis = self.rbf(x).view(x.shape[0], -1)
+        ret = self.spline_linear(spline_basis)
+
+        return ret
+
+class FasterKAN(nn.Module):
+    def __init__(
+            self,
+            layers_hidden: List[int],
+            grid_min: float = -2.,
+            grid_max: float = 2.,
+            num_grids: int = 8,
+            exponent: int = 2,
+            denominator: float = 0.33,
+            use_base_update: bool = True,
+            base_activation: Callable[[Tensor], Tensor] = F.silu,
+            spline_weight_init_scale: float = 0.667,
+    ) -> None:
+        super().__init__()
+        self.layers = nn.ModuleList([
+            FasterKANLayer(
+                in_dim, out_dim,
+                grid_min=grid_min,
+                grid_max=grid_max,
+                num_grids=num_grids,
+                exponent=exponent,
+                denominator=denominator,
+                use_base_update=use_base_update,
+                base_activation=base_activation,
+                spline_weight_init_scale=spline_weight_init_scale,
+            ) for in_dim, out_dim in zip(layers_hidden[:-1], layers_hidden[1:])
+        ])
+
+    def forward(self, x: Tensor) -> Tensor:
+        for layer in self.layers:
+            x = layer(x)
+        return x

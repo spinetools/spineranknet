@@ -1,0 +1,23 @@
+# Runtime dependencies for SpineRankNet (mirrors pyproject.toml).
+# Tested with Python 3.11, torch 2.5.0, numpy 1.26.4.
+# NumPy is kept on 1.x (the tested environment).
+torch>=2.0
+numpy>=1.23,<2
+pandas>=1.5
+scipy>=1.10
+scikit-learn>=1.2
+pyyaml>=6.0
+tqdm>=4.65
+opencv-python>=4.8
+matplotlib>=3.7
+seaborn>=0.12
+
+# CORN ordinal-regression baseline (--clf_loss corn)
+coral-pytorch>=1.4
+
+# Optional: TensorBoard logging, pretty tables in scripts/,
+# DICOM helpers in spineranknet/dataloaders/utils.py
+# tensorboard>=2.10
+# tabulate>=0.9
+# pydicom>=2.3
+# scikit-image>=0.20

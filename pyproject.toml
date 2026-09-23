@@ -1,0 +1,130 @@
+# =============================================================================
+#  spineranknet — code for "Be Indiscrete: The Benefits of Learning Continuous
+#  Spine Degeneration Severity Scores" (MICCAI 2026).
+#  PEP 621 metadata, setuptools build backend.
+# =============================================================================
+[build-system]
+requires      = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "spineranknet"
+description     = "Be Indiscrete: The Benefits of Learning Continuous Spine Degeneration Severity Scores"
+readme          = "README.md"
+license         = "Apache-2.0"
+license-files   = ["LICENSE"]
+dynamic         = ["version"]        # single-sourced from spineranknet.__version__
+requires-python = ">=3.10"
+# Listed without addresses so the author order survives into the metadata:
+# setuptools splits a mixed list into Author (no address) and Author-email
+# (address), which would drop the first author out of the Author line.
+authors = [
+    { name = "Maria Monzon" },
+    { name = "Andrew Zisserman" },
+    { name = "Robin Y. Park" },
+    { name = "Catherine R. Jutzeler" },
+    { name = "Amir Jamaludin" },
+]
+maintainers = [
+    { name = "Maria Monzon", email = "mmonzon@ethz.ch" },
+]
+keywords = [
+    "deep learning",
+    "ordinal regression",
+    "learning to rank",
+    "medical imaging",
+    "MRI",
+    "spine",
+    "intervertebral disc",
+    "MICCAI",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: GPU :: NVIDIA CUDA",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+
+# ── Runtime dependencies (imported by the trainer) ────────────────────────
+dependencies = [
+    "torch>=2.0",
+    "numpy>=1.23,<2",
+    "pandas>=1.5",
+    "scipy>=1.10",
+    "scikit-learn>=1.2",
+    "pyyaml>=6.0",
+    "tqdm>=4.65",
+    "opencv-python>=4.8",
+    "matplotlib>=3.7",
+    "seaborn>=0.12",
+]
+
+[project.optional-dependencies]
+# CORN ordinal-regression baseline (``--clf_loss corn`` / ``coral``).
+corn = [
+    "coral-pytorch>=1.4",
+]
+# DICOM / polygon helpers in ``spineranknet.dataloaders.utils`` (not needed
+# for training on the preprocessed GENODISC numpy volumes).
+dicom = [
+    "pydicom>=2.3",
+    "scikit-image>=0.20",
+]
+# Optional niceties: TensorBoard logger and pretty console tables in scripts/.
+extras = [
+    "tensorboard>=2.10",
+    "tabulate>=0.9",
+]
+dev = [
+    "ruff>=0.1",
+    "build>=1.0",
+]
+all = [
+    "spineranknet[corn,dicom,extras]",
+]
+
+[project.scripts]
+spineranknet-train = "spineranknet.baseline.train_ranking_mse:main"
+
+[project.urls]
+Homepage   = "https://spinetools.github.io/spineranknet/"
+Repository = "https://github.com/spinetools/spineranknet"
+Issues     = "https://github.com/spinetools/spineranknet/issues"
+
+# ── setuptools package discovery ───────────────────────────────────────────
+[tool.setuptools.packages.find]
+where   = ["."]
+include = ["spineranknet*"]
+exclude = ["results*", "config*", "scripts*", "docs*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "spineranknet.__version__" }
+
+[tool.setuptools.package-data]
+"spineranknet" = ["py.typed"]
+
+# ── Tooling ────────────────────────────────────────────────────────────────
+[tool.ruff]
+line-length    = 95
+target-version = "py310"
+
+[tool.ruff.lint]
+# What is selected here is what `ruff check .` is expected to keep clean.
+# `I` (import order), `N` (naming) and `UP` (PEP 585 annotations) are left out
+# on purpose: between them they flag ~630 items in this codebase, all of them
+# style rather than defect, and rewriting that many working lines is not worth
+# the risk on a release. Run `ruff check --select I,N,UP .` to see them.
+select = ["E", "F", "W"]
+ignore = [
+    "E501",  # long lines tolerated for tables/docstrings
+    "E402",  # matplotlib.use() must run before pyplot is imported
+    "E741",  # `l` is the level index throughout and reads correctly
+    "E702",  # a few short compound guards on tensor shapes
+    "F401",  # re-exports from the package __init__ files
+    "F841",  # a few plotting locals kept for readability
+]

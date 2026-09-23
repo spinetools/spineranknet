@@ -1,0 +1,7 @@
+@inproceedings{monzon2026indiscrete,
+  title     = {Be Indiscrete: The Benefits of Learning Continuous Spine Degeneration Severity Scores},
+  author    = {Monzon, Maria and Zisserman, Andrew and Park, Robin Y. and Jutzeler, Catherine R. and Jamaludin, Amir},
+  booktitle = {Medical Image Computing and Computer Assisted Intervention -- MICCAI 2026},
+  year      = {2026},
+  publisher = {Springer Nature Switzerland}
+}

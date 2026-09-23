@@ -1,0 +1,79 @@
+# macOS / exFAT metadata
+._*
+.DS_Store
+
+# Python build / cache artefacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Environments and local tool state
+.venv/
+venv/
+.env
+.claude/
+.vscode/
+.idea/
+
+# Data, caches and run outputs (never commit)
+data/
+.cache/
+results/
+runs/
+outputs/
+wandb/
+logs/
+.logs/
+*.log
+*.pt
+*.pth
+*.ckpt
+*.pkl
+*.npy
+*.npz
+*.nii
+*.nii.gz
+*.dcm
+*.h5
+*.hdf5
+events.out.tfevents.*
+
+# Cluster / job submission scripts (never commit)
+jobs/
+*.sh
+*.sbatch
+*.slurm
+slurm-*.out
+slurm-*.err
+
+# Default output locations of the trainer and scripts (never commit)
+paper/
+weights/
+evaluation/
+evaluation_results/
+docs/figures/
+*.csv
+*.out
+*.err
+*.ipynb
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Medical image formats (never commit)
+*.mha
+*.mhd
+*.nrrd
+
+# Secrets and credentials (never commit)
+.env*
+*.pem
+*.key
+.netrc

@@ -1,0 +1,62 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper listed under preferred-citation."
+type: software
+title: "SpineRankNet"
+abstract: >-
+  Code for "Be Indiscrete: The Benefits of Learning Continuous Spine
+  Degeneration Severity Scores" (MICCAI 2026). SpineRankNet learns a
+  continuous severity score in [0, 10] for each of 11 lumbar spine MRI
+  grading tasks, using a severity-aware pairwise ranking loss (SpineRank) on
+  top of a 3D ResNet-18 multi-task classifier. Thresholds on the score recover
+  the ordinal clinical grade.
+authors:
+  - family-names: Monzon
+    given-names: Maria
+    email: mmonzon@ethz.ch
+    affiliation: "Biomedical Data Science Lab, Dept. D-HEST, ETH Zurich; Swiss Institute of Bioinformatics (SIB)"
+  - family-names: Zisserman
+    given-names: Andrew
+    affiliation: "Visual Geometry Group, Dept. of Engineering Science, University of Oxford"
+  - family-names: Park
+    given-names: Robin Y.
+    affiliation: "Visual Geometry Group, Dept. of Engineering Science, University of Oxford"
+  - family-names: Jutzeler
+    given-names: Catherine R.
+    affiliation: "Biomedical Data Science Lab, Dept. D-HEST, ETH Zurich; Swiss Institute of Bioinformatics (SIB)"
+  - family-names: Jamaludin
+    given-names: Amir
+    affiliation: "Visual Geometry Group, Dept. of Engineering Science, University of Oxford"
+license: Apache-2.0
+repository-code: "https://github.com/spinetools/spineranknet"
+url: "https://spinetools.github.io/spineranknet/"
+version: 1.0.0
+keywords:
+  - deep learning
+  - ordinal regression
+  - learning to rank
+  - medical imaging
+  - MRI
+  - spine
+  - intervertebral disc
+  - MICCAI
+preferred-citation:
+  type: conference-paper
+  title: "Be Indiscrete: The Benefits of Learning Continuous Spine Degeneration Severity Scores"
+  authors:
+    - family-names: Monzon
+      given-names: Maria
+    - family-names: Zisserman
+      given-names: Andrew
+    - family-names: Park
+      given-names: Robin Y.
+    - family-names: Jutzeler
+      given-names: Catherine R.
+    - family-names: Jamaludin
+      given-names: Amir
+  collection-title: "Medical Image Computing and Computer Assisted Intervention -- MICCAI 2026"
+  collection-type: proceedings
+  conference:
+    name: "MICCAI 2026"
+  publisher:
+    name: "Springer Nature Switzerland"
+  year: 2026
